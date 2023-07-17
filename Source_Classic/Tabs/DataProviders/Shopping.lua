@@ -9,6 +9,23 @@ local SHOPPING_LIST_TABLE_LAYOUT = {
   },
   {
     headerTemplate = "AuctionatorStringColumnHeaderTemplate",
+    headerParameters = { "medianPrice" },
+    headerText = AUCTIONATOR_L_RESULTS_MEDIAN_PRICE_COLUMN,
+    cellTemplate = "AuctionatorPriceCellTemplate",
+    cellParameters = { "medianPrice" },
+    defaultHide = true,
+    width = 100
+  },
+  {
+    headerTemplate = "AuctionatorStringColumnHeaderTemplate",
+    headerParameters = { "buyOrSellDecision" },
+    headerText = AUCTIONATOR_L_RESULTS_BUY_SELL_DECISION_COLUMN,
+    cellTemplate = "AuctionatorBuyOrSellCellTemplate",
+    cellParameters = { "buyOrSellDecision" },
+    width = 75
+  },
+  {
+    headerTemplate = "AuctionatorStringColumnHeaderTemplate",
     headerParameters = { "name" },
     headerText = AUCTIONATOR_L_RESULTS_NAME_COLUMN,
     cellTemplate = "AuctionatorItemKeyCellTemplate"

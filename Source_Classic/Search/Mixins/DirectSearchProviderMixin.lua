@@ -9,6 +9,87 @@ local function GetPrice(entry)
   return entry.info[Auctionator.Constants.AuctionItemInfo.Buyout] / entry.info[Auctionator.Constants.AuctionItemInfo.Quantity]
 end
 
+local function GetHistoryMedian(temp)
+  table.sort(temp)
+
+  -- If we have an even number of table elements or odd.
+  if math.fmod(#temp,2) == 0 then
+    -- return mean value of middle two elements
+    return ( temp[#temp/2] + temp[(#temp/2)+1] ) / 2
+  else
+    -- return middle element
+    return temp[math.ceil(#temp/2)]
+  end
+end
+
+local function GetHistoryMinSeenMedian(t)
+  local temp={}
+
+  for _,v in pairs(t) do
+    if type(v.minSeen) == 'number' then
+      table.insert( temp, v.minSeen )
+    end
+  end
+
+  return GetHistoryMedian(temp)
+end
+
+local function GetHistoryAvailablenMedian(t)
+  local temp={}
+
+  for _,v in pairs(t) do
+    if type(v.available) == 'number' then
+      table.insert( temp, v.available )
+    end
+  end
+
+  return GetHistoryMedian(temp)
+end
+
+
+local function GetMedianPrice(itemLink)
+  local dbKey = Auctionator.Utilities.BasicDBKeyFromLink(itemLink)
+  if dbKey then
+    local entriesHistory = Auctionator.Database:GetPriceHistory(dbKey)
+    local medianPrice = GetHistoryMinSeenMedian(entriesHistory)
+    return math.ceil(medianPrice or 0)
+  else
+    return 0
+  end
+end
+
+local function GetBuyOrSellDecision(itemLink, minPrice, medianPrice)
+  local dbKey = Auctionator.Utilities.BasicDBKeyFromLink(itemLink)
+  if dbKey then
+    local entriesHistory = Auctionator.Database:GetPriceHistory(dbKey)
+    local medianAvailable = GetHistoryAvailablenMedian(entriesHistory)
+
+    if medianAvailable < 25 then
+      return ""
+    end
+
+    if math.abs(medianPrice-minPrice) < 3000 then
+      -- diffs lower than 30silver do not count
+      return ""
+    end
+
+    if minPrice > medianPrice*1.35 then
+      if medianAvailable < 100 then
+        return "sell"
+      else
+        return "SELL!"
+      end
+    elseif minPrice < medianPrice*0.65 then
+      if medianAvailable < 100 then
+        return "buy"
+      else
+        return "BUY!"
+      end
+    end
+    return ""
+  end
+end
+
 local function GetMinPrice(entries)
   local minPrice = nil
   for _, entry in ipairs(entries) do
@@ -135,15 +216,18 @@ function AuctionatorDirectSearchProviderMixin:AddFinalResults()
 
   for key, entries in pairs(self.resultsByKey) do
     local minPrice = GetMinPrice(entries)
+    local medianPrice = GetMedianPrice(key)
     local possibleResult = {
       itemString = key,
-      minPrice = GetMinPrice(entries),
+      minPrice = minPrice,
       totalQuantity = GetQuantity(entries),
       containsOwnerItem = GetOwned(entries),
       isTopItem = GetIsTop(entries, minPrice),
       entries = entries,
       complete = not self.aborted,
       purchaseQuantity = self.resultMetadata.quantity,
+      medianPrice = medianPrice,
+      buyOrSellDecision = GetBuyOrSellDecision(key, minPrice, medianPrice),
     }
     local item = Item:CreateFromItemID(GetItemInfoInstant(key))
     item:ContinueOnItemLoad(function()
