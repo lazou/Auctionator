@@ -225,3 +225,42 @@ function Auctionator.DatabaseMixin:GetMeanPrice(dbKey, days)
     return nil
   end
 end
+
+function Auctionator.DatabaseMixin:GetHistoryMedian(temp)
+  table.sort(temp)
+
+  -- If we have an even number of table elements or odd.
+  if math.fmod(#temp,2) == 0 then
+    -- return mean value of middle two elements
+    return ( temp[#temp/2] + temp[(#temp/2)+1] ) / 2
+  else
+    -- return middle element
+    return temp[math.ceil(#temp/2)]
+  end
+end
+
+function Auctionator.DatabaseMixin:GetHistoryMinSeenMedian(dbKey)
+  local entriesHistory = self:GetPriceHistory(dbKey)
+  local temp={}
+
+  for _,v in pairs(entriesHistory) do
+    if type(v.minSeen) == 'number' then
+      table.insert( temp, v.minSeen )
+    end
+  end
+
+  return self:GetHistoryMedian(temp)
+end
+
+function Auctionator.DatabaseMixin:GetHistoryAvailablenMedian(dbKey)
+  local entriesHistory = self:GetPriceHistory(dbKey)
+  local temp={}
+
+  for _,v in pairs(entriesHistory) do
+    if type(v.available) == 'number' then
+      table.insert( temp, v.available )
+    end
+  end
+
+  return self:GetHistoryMedian(temp)
+end

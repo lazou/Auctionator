@@ -9,49 +9,10 @@ local function GetPrice(entry)
   return entry.info[Auctionator.Constants.AuctionItemInfo.Buyout] / entry.info[Auctionator.Constants.AuctionItemInfo.Quantity]
 end
 
-local function GetHistoryMedian(temp)
-  table.sort(temp)
-
-  -- If we have an even number of table elements or odd.
-  if math.fmod(#temp,2) == 0 then
-    -- return mean value of middle two elements
-    return ( temp[#temp/2] + temp[(#temp/2)+1] ) / 2
-  else
-    -- return middle element
-    return temp[math.ceil(#temp/2)]
-  end
-end
-
-local function GetHistoryMinSeenMedian(t)
-  local temp={}
-
-  for _,v in pairs(t) do
-    if type(v.minSeen) == 'number' then
-      table.insert( temp, v.minSeen )
-    end
-  end
-
-  return GetHistoryMedian(temp)
-end
-
-local function GetHistoryAvailablenMedian(t)
-  local temp={}
-
-  for _,v in pairs(t) do
-    if type(v.available) == 'number' then
-      table.insert( temp, v.available )
-    end
-  end
-
-  return GetHistoryMedian(temp)
-end
-
-
 local function GetMedianPrice(itemLink)
   local dbKey = Auctionator.Utilities.BasicDBKeyFromLink(itemLink)
   if dbKey then
-    local entriesHistory = Auctionator.Database:GetPriceHistory(dbKey)
-    local medianPrice = GetHistoryMinSeenMedian(entriesHistory)
+    local medianPrice = Auctionator.Database:GetHistoryMinSeenMedian(dbKey)
     return math.ceil(medianPrice or 0)
   else
     return 0
@@ -61,8 +22,7 @@ end
 local function GetBuyOrSellDecision(itemLink, minPrice, medianPrice)
   local dbKey = Auctionator.Utilities.BasicDBKeyFromLink(itemLink)
   if dbKey then
-    local entriesHistory = Auctionator.Database:GetPriceHistory(dbKey)
-    local medianAvailable = GetHistoryAvailablenMedian(entriesHistory)
+    local medianAvailable = Auctionator.Database:GetHistoryAvailablenMedian(dbKey)
 
     if medianAvailable < 25 then
       return ""
