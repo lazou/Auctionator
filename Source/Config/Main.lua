@@ -5,6 +5,7 @@ Auctionator.Config.Options = {
   VENDOR_TOOLTIPS = "vendor_tooltips",
   AUCTION_TOOLTIPS = "auction_tooltips",
   AUCTION_AGE_TOOLTIPS = "auction_age_tooltips",
+  AUCTION_MEDIAN_TOOLTIPS = "auction_median_tooltips",
   AUCTION_MEAN_TOOLTIPS = "auction_mean_tooltips",
   AUCTION_MEAN_DAYS_LIMIT = "auction_mean_days_limit",
   SHIFT_STACK_TOOLTIPS = "shift_stack_tooltips",
@@ -79,6 +80,7 @@ Auctionator.Config.Defaults = {
   [Auctionator.Config.Options.VENDOR_TOOLTIPS] = true,
   [Auctionator.Config.Options.AUCTION_TOOLTIPS] = true,
   [Auctionator.Config.Options.AUCTION_AGE_TOOLTIPS] = false,
+  [Auctionator.Config.Options.AUCTION_MEDIAN_TOOLTIPS] = false,
   [Auctionator.Config.Options.AUCTION_MEAN_TOOLTIPS] = false,
   [Auctionator.Config.Options.AUCTION_MEAN_DAYS_LIMIT] = 21,
   [Auctionator.Config.Options.SHIFT_STACK_TOOLTIPS] = true,
@@ -104,7 +106,7 @@ Auctionator.Config.Defaults = {
 
   [Auctionator.Config.Options.GEAR_PRICE_MULTIPLIER] = 0,
 
-  [Auctionator.Config.Options.PRICE_HISTORY_DAYS] = 21,
+  [Auctionator.Config.Options.PRICE_HISTORY_DAYS] = 90,
   [Auctionator.Config.Options.POSTING_HISTORY_LENGTH] = 10,
 
   [Auctionator.Config.Options.SPLASH_SCREEN_VERSION] = "anything",

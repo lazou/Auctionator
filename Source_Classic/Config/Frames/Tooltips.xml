@@ -105,6 +105,17 @@
           <Anchor point="TOPLEFT" relativeKey="$parent.ShiftStackTooltips" relativePoint="BOTTOMLEFT"/>
         </Anchors>
       </Frame>
+
+      <Frame inherits="AuctionatorConfigurationCheckbox" parentKey="AuctionMedianTooltips">
+        <KeyValues>
+          <KeyValue key="labelText" value="AUCTIONATOR_L_CONFIG_AUCTION_MEDIAN_TOOLTIP" type="global"/>
+          <KeyValue key="tooltipTitleText" value="AUCTIONATOR_L_AUCTION_MEDIAN_TOOLTIP_TOOLTIP_HEADER" type="global"/>
+          <KeyValue key="tooltipText" value="AUCTIONATOR_L_AUCTION_MEDIAN_TOOLTIP_TOOLTIP_TEXT" type="global"/>
+        </KeyValues>
+        <Anchors>
+          <Anchor point="TOPLEFT" relativeKey="$parent.AuctionAgeTooltips" relativePoint="BOTTOMLEFT"/>
+        </Anchors>
+      </Frame>
     </Frames>
   </Frame>
 </Ui>

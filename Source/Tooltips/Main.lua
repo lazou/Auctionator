@@ -43,6 +43,10 @@ function Auctionator.Tooltip.ShowTipWithPricingDBKey(tooltipFrame, dbKeys, itemL
       showAgeUnknown = Auctionator.Database:GetPrice(dbKeys[1]) ~= nil
     end
   end
+
+  local auctionMedian
+  auctionMedian = Auctionator.Database:GetHistoryMinSeenMedian(dbKeys[1])
+
   local auctionMean
   if Auctionator.Config.Get(Auctionator.Config.Options.AUCTION_MEAN_TOOLTIPS) then
     auctionMean = Auctionator.Database:GetMeanPrice(dbKeys[1], Auctionator.Config.Get(Auctionator.Config.Options.AUCTION_MEAN_DAYS_LIMIT))
@@ -102,6 +106,7 @@ function Auctionator.Tooltip.ShowTipWithPricingDBKey(tooltipFrame, dbKeys, itemL
   Auctionator.Tooltip.AddAuctionTip(tooltipFrame, auctionPrice, countString, cannotAuction)
   Auctionator.Tooltip.AddAuctionMeanTip(tooltipFrame, auctionMean, countString, cannotAuction)
   Auctionator.Tooltip.AddAuctionAgeTip(tooltipFrame, auctionAge, auctionPrice, showAgeUnknown)
+  Auctionator.Tooltip.AddAuctionMedianTip(tooltipFrame, auctionMedian)
   if disenchantStatus ~= nil then
     Auctionator.Tooltip.AddDisenchantTip(tooltipFrame, disenchantPrice, countString, disenchantStatus)
 
@@ -233,6 +238,16 @@ function Auctionator.Tooltip.AddAuctionAgeTip(tooltipFrame, auctionAge, auctionP
     tooltipFrame:AddDoubleLine(AUCTIONATOR_L_AUCTION_AGE, WHITE_FONT_COLOR:WrapTextInColorCode(AUCTIONATOR_L_X_DAYS:format(tostring(auctionAge))))
   elseif auctionPrice ~= nil and showUnknown then
     tooltipFrame:AddDoubleLine(AUCTIONATOR_L_AUCTION_AGE, AUCTIONATOR_L_UNKNOWN)
+  end
+end
+
+function Auctionator.Tooltip.AddAuctionMedianTip(tooltipFrame, auctionMedian)
+  if not Auctionator.Config.Get(Auctionator.Config.Options.AUCTION_MEDIAN_TOOLTIPS) then
+    return
+  end
+
+  if auctionMedian ~= nil then
+    tooltipFrame:AddDoubleLine(AUCTIONATOR_L_AUCTION_MEDIAN, WHITE_FONT_COLOR:WrapTextInColorCode(Auctionator.Utilities.CreatePaddedMoneyString(auctionMedian)))
   end
 end
 
