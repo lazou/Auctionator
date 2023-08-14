@@ -31,6 +31,13 @@ function AuctionatorSellingBagFrameMixin:OnLoad()
     prevFrame = frame
   end
 
+  self.highlightedKey = {}
+
+  self.itemMap = {}
+  for _, classID in ipairs(self.orderedClassIds) do
+    self.itemMap[classID] = {}
+  end
+
   self:SetWidth(self.frameMap[FAVOURITE]:GetRowWidth())
 
   -- Used to preserve scroll position relative to top when contents change
@@ -51,20 +58,56 @@ function AuctionatorSellingBagFrameMixin:OnLoad()
   ScrollUtil.InitScrollBoxWithScrollBar(self.ScrollBox, self.ScrollBar, view);
 
 
+  Auctionator.EventBus:RegisterSource(self, "AuctionatorSellingBagFrameMixin")
   Auctionator.EventBus:Register(self, {
-    Auctionator.Selling.Events.BagItemClicked
+    Auctionator.Selling.Events.BagItemClicked,
+    Auctionator.Selling.Events.BagItemRequest,
+    Auctionator.Selling.Events.ClearBagItem,
+    Auctionator.Selling.Events.BagReady,
   })
 end
 
 function AuctionatorSellingBagFrameMixin:OnHide()
-  self.highlightedKey = nil
+  self.highlightedKey = {}
+  self.isInitialViewReady = false
 end
 
 function AuctionatorSellingBagFrameMixin:ReceiveEvent(event, ...)
-  if event == Auctionator.Selling.Events.BagItemClicked then
+  if event == Auctionator.Selling.Events.BagItemRequest then
+    local key = ...
+
+    if not self.isInitialViewReady then
+      C_Timer.After(0, function()
+        Auctionator.EventBus:Fire(self, Auctionator.Selling.Events.BagItemRequest, key)
+      end)
+      return
+    end
+
+    local item = self.itemMap[key.classID][key.key]
+
+    if item == nil then
+      Auctionator.EventBus:Fire(self, Auctionator.Selling.Events.ClearBagItem)
+      return
+    end
+
+    if item.location ~= nil and not C_Item.DoesItemExist(item.location) then
+      item.location = nil
+      item.count = 0
+    end
+
+    Auctionator.EventBus:Fire(self, Auctionator.Selling.Events.BagItemClicked, item)
+
+  elseif event == Auctionator.Selling.Events.BagItemClicked then
     local itemInfo = ...
-    self.highlightedKey = Auctionator.Selling.UniqueBagKey(itemInfo)
+    self.highlightedKey = itemInfo.key or {}
     self:Update()
+
+  elseif event == Auctionator.Selling.Events.ClearBagItem then
+    self.highlightedKey = {}
+    self:Update()
+
+  elseif event == Auctionator.Selling.Events.BagReady then
+    self.isInitialViewReady = true
   end
 end
 
@@ -161,27 +204,37 @@ function AuctionatorSellingBagFrameMixin:Update()
   self.ScrollBox.ItemListingFrame.oldHeight = self.ScrollBox.ItemListingFrame:GetHeight()
 
   local lastItem = nil
+  local lastClassID = nil
 
   for _, classId in ipairs(self.orderedClassIds) do
     local frame = self.frameMap[classId]
     local items = self.items[classId]
+    local map = self.itemMap[classId]
+
     frame:Reset()
 
     local classItems = {}
 
     for _, item in ipairs(items) do
       if item.auctionable then
+        local key = {
+          key = Auctionator.Selling.UniqueBagKey(item),
+          classID = classId,
+        }
+        item.key = key
+        map[key.key] = item
         table.insert(classItems, item)
-        item.selected = self.highlightedKey == Auctionator.Selling.UniqueBagKey(item)
+        item.selected = self.highlightedKey.key == key.key and self.highlightedKey.classID == key.classID
         if lastItem then
-          lastItem.nextItem = item
-          item.prevItem = lastItem
+          lastItem.nextItem = key
+          item.prevItem = lastItem.key
         else
           -- Necessary as sometimes favourites get copied around and may have a
           -- prevItem field set
           item.prevItem = nil
         end
         lastItem = item
+        lastClassID = classId
       end
     end
 

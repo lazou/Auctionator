@@ -44,6 +44,7 @@ end
 function AuctionatorSaleItemMixin:OnShow()
   Auctionator.EventBus:Register(self, {
     Auctionator.Selling.Events.BagItemClicked,
+    Auctionator.Selling.Events.ClearBagItem,
     Auctionator.Selling.Events.RequestPost,
     Auctionator.Selling.Events.ConfirmPost,
     Auctionator.AH.Events.ThrottleUpdate,
@@ -63,11 +64,21 @@ function AuctionatorSaleItemMixin:OnShow()
 
   self:UpdateSkipButton()
   self:Reset()
+
+  if Auctionator.Config.Get(Auctionator.Config.Options.SELLING_SHOULD_RESELECT_ITEM) then
+    local key = Auctionator.Config.Get(Auctionator.Config.Options.SELLING_RESELECT_ITEM)
+    if key ~= nil then
+      Auctionator.EventBus:Fire(
+        self, Auctionator.Selling.Events.BagItemRequest, key
+      )
+    end
+  end
 end
 
 function AuctionatorSaleItemMixin:OnHide()
   Auctionator.EventBus:Unregister(self, {
     Auctionator.Selling.Events.BagItemClicked,
+    Auctionator.Selling.Events.ClearBagItem,
     Auctionator.Selling.Events.RequestPost,
     Auctionator.Selling.Events.ConfirmPost,
     Auctionator.AH.Events.ThrottleUpdate,
@@ -75,6 +86,7 @@ function AuctionatorSaleItemMixin:OnHide()
     Auctionator.Selling.Events.RefreshSearch,
     Auctionator.Components.Events.EnterPressed,
   })
+  Auctionator.Config.Set(Auctionator.Config.Options.SELLING_RESELECT_ITEM, self.lastKey)
   Auctionator.EventBus:UnregisterSource(self)
   self:UnlockItem()
   ClearOverrideBindings(self)
@@ -170,8 +182,15 @@ function AuctionatorSaleItemMixin:ReceiveEvent(event, ...)
     self.itemInfo = ...
     self.nextItem = self.itemInfo and self.itemInfo.nextItem
     self.prevItem = self.itemInfo and self.itemInfo.prevItem
+    self.lastKey = self.itemInfo and self.itemInfo.key
     self:LockItem()
     self:Update()
+
+  elseif event == Auctionator.Selling.Events.ClearBagItem then
+    self.nextItem = nil
+    self.prevItem = nil
+    self.lastKey = nil
+    self:Reset()
 
   elseif event == Auctionator.AH.Events.ThrottleUpdate then
     self:UpdatePostButtonState()
@@ -700,7 +719,7 @@ function AuctionatorSaleItemMixin:PostItem(confirmed)
      ) then
     -- Option to automatically select the next item in the bag view
     Auctionator.EventBus:Fire(
-      self, Auctionator.Selling.Events.BagItemClicked, self.nextItem
+      self, Auctionator.Selling.Events.BagItemRequest, self.nextItem
     )
 
   else
@@ -712,39 +731,15 @@ end
 function AuctionatorSaleItemMixin:SkipItem()
   if self.SkipButton:IsEnabled() then
     Auctionator.EventBus:Fire(
-      self, Auctionator.Selling.Events.BagItemClicked, self.nextItem
+      self, Auctionator.Selling.Events.BagItemRequest, self.nextItem
     )
   end
 end
 
-local function FindItemAgain(prevItemInfo)
-  local key = Auctionator.Selling.UniqueBagKey(prevItemInfo)
-  for _, bagID in ipairs(Auctionator.Constants.BagIDs) do
-    for slot = 1, C_Container.GetContainerNumSlots(bagID) do
-      local location = ItemLocation:CreateFromBagAndSlot(bagID, slot)
-      if C_Item.DoesItemExist(location) then
-        local itemInfo = Auctionator.Utilities.ItemInfoFromLocation(location)
-        if Auctionator.Selling.UniqueBagKey(itemInfo) == key then
-          return location
-        end
-      end
-    end
-  end
-  return nil
-end
-
 function AuctionatorSaleItemMixin:PrevItem()
   if self.PrevButton:IsEnabled() then
-    -- The item with the same ID to post again may be at a different location if
-    -- there was more than one stack, so locate the other stack
-    self.prevItem.location = FindItemAgain(self.prevItem)
-    if IsValidItem(self.prevItem) then
-      self.prevItem.count = C_AuctionHouse.GetAvailablePostCount(self.prevItem.location)
-    else
-      self.prevItem.count = 0
-    end
     Auctionator.EventBus:Fire(
-      self, Auctionator.Selling.Events.BagItemClicked, self.prevItem
+      self, Auctionator.Selling.Events.BagItemRequest, self.prevItem
     )
   end
 end
