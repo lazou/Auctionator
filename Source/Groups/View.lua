@@ -163,11 +163,7 @@ function AuctionatorGroupsViewMixin:Update(cache)
   self.cacheUpdated = true
   self.rawItems = cache:GetAllContents()
   table.sort(self.rawItems, function(a, b)
-    if a.itemName == b.itemName then
-      return a.sortKey < b.sortKey
-    else
-      return a.itemName < b.itemName
-    end
+    return a.sortKey < b.sortKey
   end)
   self:UpdateFromExisting()
 end
@@ -216,6 +212,9 @@ function AuctionatorGroupsViewMixin:UpdateFromExisting()
         end)
       else
         table.sort(infos, function(a, b) return a.sortKey < b.sortKey end)
+      end
+      if not Auctionator.Config.Get(Auctionator.Config.Options.SELLING_MISSING_FAVOURITES) then
+        infos = tFilter(infos, function(a) return #a.locations > 0 end, true)
       end
       local keyName = GetKeyName(groupDetails.name, isCustom)
       for _, info in ipairs(infos) do
